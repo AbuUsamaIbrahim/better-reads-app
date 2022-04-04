@@ -7,15 +7,15 @@ spring:
       client:
         registration:
           github:
-            client-id: <userId>
-            client-secret: <password>
+            client-id: <clientId>
+            client-secret: <clientSecret>
  
   data:
     cassandra:
       keyspace-name: main
-      username: <userId>
+      username: <username>
       password: <password>
-      schema-action: recreate
+      schema-action: CREATE_IF_NOT_EXISTS
       request:
         timeout: 30s
       connection:

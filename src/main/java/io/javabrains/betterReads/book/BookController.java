@@ -3,18 +3,27 @@ package io.javabrains.betterReads.book;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import io.javabrains.betterReads.userBook.UserBooks;
+import io.javabrains.betterReads.userBook.UserBooksPrimaryKey;
+import io.javabrains.betterReads.userBook.UserBooksRepository;
+import jnr.ffi.Struct.key_t;
+
 @Controller
 public class BookController {
   private final String COVER_IMAGE_ROOT = "http://covers.openlibrary.org/b/id/";
   @Autowired BookRepository bookRepository;
+  @Autowired UserBooksRepository userBooksRepository;
 
   @GetMapping("/book/{bookId}")
-  public String getBookById(@PathVariable String bookId, Model model){
+  public String getBookById(@PathVariable String bookId, Model model, @AuthenticationPrincipal OAuth2User principal ){
     Optional<Book> optionalBook = bookRepository.findById(bookId);
     if(optionalBook.isPresent()){
       Book book = optionalBook.get();
@@ -24,6 +33,21 @@ public class BookController {
       }
       model.addAttribute("coverImage", coverImageUrl);
       model.addAttribute("book", book);
+
+      if(principal != null && principal.getAttribute("login") != null){
+        String userId = principal.getAttribute("login");
+        model.addAttribute("loginId", userId);
+        UserBooksPrimaryKey userBooksPrimaryKey = new UserBooksPrimaryKey();
+        userBooksPrimaryKey.setBookId(bookId);
+        userBooksPrimaryKey.setUserId(userId);
+        Optional<UserBooks> userBooks = userBooksRepository.findById(userBooksPrimaryKey);
+        if(userBooks.isPresent()){
+          model.addAttribute("userBooks", userBooks.get());
+        }else{
+          model.addAttribute("userBooks", new UserBooks());
+        }
+      }
+
       return "book";
     }
     return "bookNotFound";
